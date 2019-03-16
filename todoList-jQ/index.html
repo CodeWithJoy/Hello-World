@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<!-- 本次練習面臨難題：
+1.想要可愛的V & 垃圾桶？  A: 練習使用網路icon
+2.儲存輸入資料？   A: 練習用localStorage
+2.點擊垃圾桶刪除?  A: 學習代理觀念->用父元素監聽所有子元素並做判斷
+3.完成事件變綠，如何刷新後保持特性？   //感覺要另外闢一個存完成事件的地方 ：）
+ -->
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+        integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <script defer src="https://use.fontawesome.com/releases/v5.7.2/js/all.js"
+        integrity="sha384-0pzryjIRos8mFBWMzSSZApWtPl/5++eIfzYmTgBBmXYdhvxPc+XcFEk+zJwDgWbP"
+        crossorigin="anonymous"></script>
+
+    <title>Todo List-jQ</title>
+    </script>
+    <style>
+        #test {
+            background: yellow;
+            height: 100px;
+            width: 100px;
+            overflow: scroll;
+            text-overflow: ellipsis
+        }
+
+        #test::before {
+            content: '<li>123</li>';
+        }
+
+        .green {
+            background-color: #91FF75;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container" style="max-width: 700px">
+        <div class="input-group mb-3">
+            <div class="input-group-prepend">
+                <span class="input-group-text" id="basic-addon1">To Do</span>
+            </div>
+            <input type="text" class="form-control listContent listText" placeholder="打算做什麼？" aria-label="Username"
+                aria-describedby="basic-addon1">
+            <button type="button" class="btn btn-dark sendBtn">Send</button>
+        </div>
+        <ul class="list-group list" style="display:flex">
+        </ul>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+        integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+        crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+        integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
+        crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+        integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
+        crossorigin="anonymous"></script>
+    <script>
+        $(document).ready(function () {
+            //刷新資料
+            var listData = [];
+
+            updateData();
+            function updateData() {
+                if (localStorage.getItem('listData') !== null && localStorage.getItem('listData') !== "") {  //記得是不等於null喔！
+                    listData = localStorage.getItem('listData').split(',');
+                    for (let i = 0; i < listData.length; i++) {
+                        $('.list').append(`
+                        <li data-num =${i} class='list-group-item' style="position: relative" > ${listData[i]} 
+                                <span data-num =${i} class="checkBtn" style="font-size: 1.5em; color: green; cursor: pointer; position: absolute; right: 50px">
+                                    <i data-num =${i} class="fas fa-check checkBtn"></i>
+                                </span>
+
+                                <span data-num =${i} class="deleteBtn" style=" font-size: 1.5em; color: blue; cursor: pointer; position: absolute; right: 20px">
+                                    <i data-num =${i} class="far fa-trash-alt deleteBtn"></i>
+                                </span> 
+                              
+                        </li >`);
+                    }
+
+                } else {
+                    return;
+                }
+            }
+
+            //刷新時清空ul內容
+            function empty() {
+
+            }
+
+
+            //新增事件
+            $('.sendBtn').click(function () {
+                if ($('.listText').val() !== '') {
+                    listData.push($('.listText').val())
+                    localStorage.setItem('listData', listData);
+                    $('.listText').val('');
+                    $('ul').empty();  //清空list
+                    updateData(); //直接重新刷新
+                }
+            });
+            $('.listText').keypress(function (e) {
+                var code = (e.keyCode ? e.keyCode : e.which);
+
+                if (e.keyCode === 13 && $('.listText').val() !== '') {
+                    listData.push($('.listText').val())
+                    localStorage.setItem('listData', listData);
+                    $('.listText').val('');   //記得是直接在val()裡面賦予新值喔！
+                    $('ul').empty();
+                    updateData();
+
+                };
+            })
+
+            //完成＋刪除單筆項目
+            $('.checkBtn').click(function (e) {
+                $(e.target).parentsUntil('ul').toggleClass("green");
+                // $(e.target), $(this)才可以把目標變成jQ可取用的元素
+
+            })
+            $('ul').click(function (e) {  //卡關重點＊＊＊代理： 用ul父元素監聽之後的事件
+                //抓取class有'deleteBtn'者
+                if ($(e.target).parentsUntil('ul').attr('class').indexOf('deleteBtn') > -1) {
+                    $(e.target).parentsUntil('ul').css('display', 'none');
+                    var num = $(e.target).parentsUntil('ul').attr('data-num');
+                    console.log(num);
+                    listData.splice(num, 1);
+                    localStorage.setItem('listData', listData);
+                    $('ul').empty();
+                    updateData();
+                }
+                // $(e.targets), $(this)才可以把目標變成jQ可取用的元素
+            })
+
+        })
+    </script>
+</body>
+
+</html>
